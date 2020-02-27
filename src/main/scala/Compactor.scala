@@ -5,8 +5,8 @@ object Compactor {
   def main(args: Array[String]): Unit = {
     if (args.length > 0) {
       val spark = SparkSession.builder.appName("CompactFiles").getOrCreate()
-      val cf = new CompactFiles
-      cf.compactParquetFiles(spark, args(0))
+      val cf = new CompactFiles(spark)
+      cf.compact(args(0))
       spark.stop()
     } else {
       println("ERROR! It's needed at least one argument to compact the HDFS files." +

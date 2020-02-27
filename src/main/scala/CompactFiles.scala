@@ -1,15 +1,14 @@
 import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.spark.sql.SparkSession
 
-class CompactFiles(hdfsBlockSizeMB: Long = 128, tempSuffixe: String = "_compact_temp") {
+class CompactFiles(spark: SparkSession, hdfsBlockSizeMB: Long = 128, tempSuffixe: String = "_compact_temp") {
 
   /**
     * Compact existing parquet files in an HDFS directory into parquet files with an approximate size of an HDFS block.
     *
-    * @param spark   : Spark Session
     * @param uriPath : HDFS directory path
     */
-  def compactParquetFiles(spark: SparkSession, uriPath: String): Unit = {
+  def compactParquetFiles(uriPath: String): Unit = {
     val hdfsBlockSizeBytes = hdfsBlockSizeMB * 1024 * 1024
     val path: Path = new Path(uriPath)
     val fs = FileSystem.get(spark.sparkContext.hadoopConfiguration)
@@ -22,6 +21,22 @@ class CompactFiles(hdfsBlockSizeMB: Long = 128, tempSuffixe: String = "_compact_
     // Delete the original directory and then rename the temp directory like the original
     fs.delete(new Path(uriPath), true)
     fs.rename(new Path(uriPath + tempSuffixe), new Path(uriPath))
+  }
+
+  /**
+    * Receive an HDFS path and compact the parquet files in the leaf directories.
+    *
+    * @param uriPath : HDFS directory path
+    */
+  def compact(uriPath: String): Unit = {
+    val path: Path = new Path(uriPath)
+    val fs = FileSystem.get(spark.sparkContext.hadoopConfiguration)
+    val status = fs.listStatus(path).filter(_.isDirectory)
+    if (status.length > 0) {
+      status.map(_.getPath.toUri.toString).foreach(compact) // recursive call
+    } else {
+      compactParquetFiles(uriPath)
+    }
   }
 
 }
