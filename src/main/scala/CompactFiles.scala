@@ -1,7 +1,13 @@
 import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.spark.sql.SparkSession
 
-class CompactFiles(spark: SparkSession, hdfsBlockSizeMB: Long = 128, tempSuffixe: String = "_compact_temp") {
+/**
+  *
+  * @param spark           : Spark session
+  * @param hdfsBlockSizeMB : HDFS block size in MegaBytes
+  * @param tempSuffix      : A temporal suffix added to the directory that going be compacted
+  */
+class CompactFiles(spark: SparkSession, hdfsBlockSizeMB: Long = 128, tempSuffix: String = "_compact_temp") {
 
   /**
     * Compact existing parquet files in an HDFS directory into parquet files with an approximate size of an HDFS block.
@@ -17,10 +23,10 @@ class CompactFiles(spark: SparkSession, hdfsBlockSizeMB: Long = 128, tempSuffixe
     // Read the data and then store it in a temporary directory
     val df = spark.sqlContext.read.parquet(uriPath)
     df.repartition(fileNum).write.mode("overwrite").option("compression", "gzip")
-      .parquet(uriPath + tempSuffixe)
+      .parquet(uriPath + tempSuffix)
     // Delete the original directory and then rename the temp directory like the original
     fs.delete(new Path(uriPath), true)
-    fs.rename(new Path(uriPath + tempSuffixe), new Path(uriPath))
+    fs.rename(new Path(uriPath + tempSuffix), new Path(uriPath))
   }
 
   /**
@@ -38,5 +44,4 @@ class CompactFiles(spark: SparkSession, hdfsBlockSizeMB: Long = 128, tempSuffixe
       compactParquetFiles(uriPath)
     }
   }
-
 }
