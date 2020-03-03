@@ -37,7 +37,10 @@ class CompactFiles(spark: SparkSession, hdfsBlockSizeMB: Long = 128, tempSuffix:
   def compact(uriPath: String): Unit = {
     val path: Path = new Path(uriPath)
     val fs = FileSystem.get(spark.sparkContext.hadoopConfiguration)
-    val status = fs.listStatus(path).filter(_.isDirectory)
+    val invalidPrefixList = List("_", "-", ".")
+    val status = fs.listStatus(path).filter(_.isDirectory).filter(dir => {
+      !invalidPrefixList.exists(prefix => dir.getPath.toUri.toString.split("/").last.startsWith(prefix))
+    })
     if (status.length > 0) {
       status.map(_.getPath.toUri.toString).foreach(compact) // recursive call
     } else {

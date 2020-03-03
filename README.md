@@ -17,25 +17,37 @@ Right now, the project receive as an argument an HDFS directory path with small 
 Assuming you have a Cluster with a functionally environment of Apache Spark, you just need to download the project and generate the JAR. 
 
 1. Clone the project:
-```sh
-$ git clone https://github.com/carlossegovia/compactHDFSFiles.git
-```
-2. Compile the project with SBT:
-```sh
-$ sbt clean package
-```
-*The JAR file will be generate in __./compactHDFSFiles/target/scala-2.11/CompactHDFSFiles.jar__*
+    ```sh
+    $ git clone https://github.com/carlossegovia/compactHDFSFiles.git
+    ```
+ 2. Compile the project with SBT:
+    ```sh
+    $ sbt clean package
+    ```
+    *The JAR file will be generate in __./compactHDFSFiles/target/scala-2.11/CompactHDFSFiles.jar__*
 
 3. Execute the JAR with Apache Spark:
-```sh
-$ spark-submit --master yarn --deploy-mode cluster --name CompactHDFSFiles --class Compactor hdfs://HDFSpathToJAR/CompactHDFSFiles.jar hdfs://pathOfDirectoryToCompact
-```
-*The object Compactor can receive two arguments:*
-* **(Required)**: HDFS directory path
-* **(Optional)**: HDFS block size in MB. The default value is 128 MB.
-        
+    ```sh
+    $ spark-submit --master yarn --deploy-mode cluster --name CompactHDFSFiles --class Compactor hdfs://HDFSpathToJAR/CompactHDFSFiles.jar -f 1 -t hdfs://pathOfDirectoryToCompact
+    ```
+    *Help:*
 
-### Todos
+    ```sh
+    Usage:
+        CompactHDFSFiles.Jar [-f number] [-t string] [-s number] [-r string]
+    
+    Arguments:
+        Required: [-f number] [-t string]
+        Optional: [-s number] [-r string]
+        
+    Description:
+    -f: Function number.  (1) for compact parquet files or (2) for collect directories stats.
+    -t: Target path.      The HDFS path for compact the parquet files or collect stats.
+    -r: Result path.      The HDFS path for store the collected stats. Default, '/user/collected_stats/'
+    -s: HDFS block size.  The HDFS block size in Megabytes for compact the data. Default, 128 MB.
+    ```     
+
+### TODO
 
  - Write Tests
  - Write methods to support more types of files.

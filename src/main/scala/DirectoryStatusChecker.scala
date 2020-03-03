@@ -31,8 +31,10 @@ class DirectoryStatusChecker(spark: SparkSession) {
       val fs = FileSystem.get(spark.sparkContext.hadoopConfiguration)
       // Return a list of directories if they're valid. For example, directories that start with  '.metadata' or
       // '.signals' aren't valid.
-      val listStatus = fs.listStatus(path).filter(_.isDirectory).filter(!_.getPath.toUri.toString.split("/").last
-        .startsWith("."))
+      val invalidPrefixList = List("_", "-", ".")
+      val listStatus = fs.listStatus(path).filter(_.isDirectory).filter(dir => {
+        !invalidPrefixList.exists(prefix => dir.getPath.toUri.toString.split("/").last.startsWith(prefix))
+      })
       if (listStatus.length > 0) {
         listStatus.map(_.getPath.toUri.toString).foreach(getDirStats) // recursive call
       } else {
@@ -54,6 +56,7 @@ class DirectoryStatusChecker(spark: SparkSession) {
 
     getDirStats(uriPath)
     // Transform the List of DirectoryStats in a Dataset
+    import spark.implicits._
     val df: Dataset[DirectoryStats] = listDirStats.toSeq.toDS()
     // Add other columns with more human-readable data
     df.withColumn("avgParquetFilesMBytes", df("avgParquetFilesBytes") / MBytes)
