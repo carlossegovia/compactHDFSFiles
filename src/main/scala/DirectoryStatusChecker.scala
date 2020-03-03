@@ -57,11 +57,14 @@ class DirectoryStatusChecker(spark: SparkSession) {
     getDirStats(uriPath)
     // Transform the List of DirectoryStats in a Dataset
     import spark.implicits._
-    val df: Dataset[DirectoryStats] = listDirStats.toSeq.toDS()
+    val ds: Dataset[DirectoryStats] = listDirStats.toDS()
     // Add other columns with more human-readable data
-    df.withColumn("avgParquetFilesMBytes", df("avgParquetFilesBytes") / MBytes)
-      .withColumn("dirSizeMBytes", df("dirSizeBytes") / MBytes)
-      .withColumn("lastModTimestamp", (df("lastModTime") / 1000).cast(TimestampType))
-      .withColumn("lastAccessTimestamp", (df("lastAccessTime") / 1000).cast(TimestampType))
+    val df = ds.withColumn("avgParquetFilesMBytes", ds("avgParquetFilesBytes") / MBytes)
+      .withColumn("dirSizeMBytes", ds("dirSizeBytes") / MBytes)
+      .withColumn("lastModTimestamp", (ds("lastModTime") / 1000).cast(TimestampType))
+      .withColumn("lastAccessTimestamp", (ds("lastAccessTime") / 1000).cast(TimestampType))
+    // Rename the columns name. Replace CamelCase por SnakeCase
+    val colsNamesWithUnderscores = df.columns.map(Utils.camelToUnderscores)
+    df.toDF(colsNamesWithUnderscores: _*)
   }
 }
